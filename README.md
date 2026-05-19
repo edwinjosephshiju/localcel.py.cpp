@@ -12,10 +12,19 @@
 - **Dynamic Theming**: Custom dark-mode installer UI leveraging GDI+.
 
 ## Build Instructions
-Run the `build.exe` natively from the "x64 Native Tools Command Prompt for VS 2022":
+
+**For Windows:**
+Run the `build.cpp` natively from the "x64 Native Tools Command Prompt for VS 2022":
 ```cmd
-cd Localcel
-cl /EHsc build.cpp
-build.exe
+mkdir dist
+cl /EHsc build.cpp /Fe:dist\build.exe
+dist\build.exe
 ```
-This will compile the `Localcel.exe` using standard Microsoft MSVC tools (`cl.exe`, `rc.exe`).
+This will compile the `Localcel.exe` using standard Microsoft MSVC tools (`cl.exe`, `rc.exe`) into the `dist` directory.
+
+**For Linux (Placeholder):**
+```bash
+mkdir -p dist
+g++ -std=c++20 build.cpp -o dist/build
+./dist/build
+```

@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <filesystem>
 
 int run_command(const std::string& cmd) {
     std::cout << "[BUILD] " << cmd << "\n";
@@ -17,8 +18,17 @@ int main() {
     std::cout << "      Localcel Native C++ Build System        \n";
     std::cout << "==============================================\n\n";
 
+    namespace fs = std::filesystem;
+    if (!fs::exists("dist")) {
+        fs::create_directory("dist");
+        std::cout << "[BUILD] Created 'dist' directory.\n";
+    }
+
+#if defined(_WIN32)
+    std::cout << "[BUILD] OS detected: Windows\n";
+
     // 1. Compile Resources
-    std::string rcCmd = "rc.exe /nologo /fo src\\bootstrapper\\resources.res src\\bootstrapper\\resources.rc";
+    std::string rcCmd = "rc.exe /nologo /fo src\\bootstrapper\\windows\\resources.res src\\bootstrapper\\windows\\resources.rc";
     if (run_command(rcCmd) != 0) {
         std::cerr << "Failed to compile resources.rc\n";
         std::system("pause");
@@ -30,16 +40,16 @@ int main() {
     clCmd += "/D \"NDEBUG\" /D \"_WINDOWS\" /D \"UNICODE\" /D \"_UNICODE\" ";
     
     std::vector<std::string> srcs = {
-        "src\\bootstrapper\\main.cpp", "src\\bootstrapper\\installer_ui.cpp", "src\\bootstrapper\\dependency_manager.cpp", 
-        "src\\bootstrapper\\extractor.cpp", "src\\bootstrapper\\hash_util.cpp", "src\\bootstrapper\\process_util.cpp", 
-        "src\\bootstrapper\\supervisor.cpp", "src\\bootstrapper\\logger.cpp"
+        "src\\bootstrapper\\windows\\main.cpp", "src\\bootstrapper\\windows\\installer_ui.cpp", "src\\bootstrapper\\windows\\dependency_manager.cpp", 
+        "src\\bootstrapper\\windows\\extractor.cpp", "src\\bootstrapper\\windows\\hash_util.cpp", "src\\bootstrapper\\windows\\process_util.cpp", 
+        "src\\bootstrapper\\windows\\supervisor.cpp", "src\\bootstrapper\\windows\\logger.cpp"
     };
 
     for (const auto& src : srcs) {
         clCmd += src + " ";
     }
 
-    clCmd += "src\\bootstrapper\\resources.res /link /SUBSYSTEM:WINDOWS /OUT:Localcel.exe ";
+    clCmd += "src\\bootstrapper\\windows\\resources.res /link /SUBSYSTEM:WINDOWS /OUT:dist\\Localcel.exe ";
     
     std::vector<std::string> libs = {
         "user32.lib", "gdi32.lib", "comctl32.lib", 
@@ -58,12 +68,32 @@ int main() {
 
     // 3. Clean up intermediate files
     std::cout << "[BUILD] Cleaning up intermediate files (*.obj, resources.res)...\n";
-    std::system("del src\\bootstrapper\\*.obj src\\bootstrapper\\resources.res *.obj >nul 2>&1");
+    std::system("del src\\bootstrapper\\windows\\*.obj src\\bootstrapper\\windows\\resources.res *.obj >nul 2>&1");
 
     std::cout << "\n==============================================\n";
-    std::cout << " BUILD SUCCESSFUL: Localcel.exe generated.\n";
+    std::cout << " BUILD SUCCESSFUL: dist\\Localcel.exe generated.\n";
     std::cout << "==============================================\n";
 
     std::system("pause");
     return 0;
+
+#elif defined(__linux__)
+    std::cout << "[BUILD] OS detected: Linux\n";
+    std::cout << "[BUILD] Compiling Linux placeholder...\n";
+    
+    std::string clCmd = "g++ -std=c++20 -O2 src/bootstrapper/linux/main.cpp -o dist/Localcel";
+    if (run_command(clCmd) != 0) {
+        std::cerr << "Failed to compile C++ source files for Linux.\n";
+        return 1;
+    }
+    
+    std::cout << "\n==============================================\n";
+    std::cout << " BUILD SUCCESSFUL: dist/Localcel generated.\n";
+    std::cout << "==============================================\n";
+
+    return 0;
+#else
+    std::cerr << "[ERROR] Unsupported OS detected.\n";
+    return 1;
+#endif
 }
