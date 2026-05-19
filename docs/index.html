@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Localcel.py.cpp - A high-performance native Win32 C++ Bootstrapper and Supervisor for the Localcel Python GUI.">
+    <title>Localcel.py.cpp | Native C++ Bootstrapper</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --accent-color: #0078D7;
+            --card-bg: #1e1e1e;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        header {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(180deg, #1a1a1a 0%, var(--bg-color) 100%);
+            width: 100%;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #a0a0a0;
+            margin-bottom: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            padding: 2rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #333;
+        }
+        .card h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+        code {
+            background-color: #2d2d2d;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #2d2d2d;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #444;
+        }
+        a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #005a9e;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Localcel.py.cpp</h1>
+    <h2>Native C++ Bootstrapper & Supervisor</h2>
+    <a href="https://github.com/edwinjosephshiju/localcel.py.cpp" class="btn">View on GitHub</a>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h3>🚀 Architecture Overview</h3>
+        <p>Localcel.py.cpp replaces bloated frameworks with a lightning-fast, native Win32 C++ bootstrapper. The entire Python PyQt6 GUI application is securely embedded inside the `.exe` as an `RCDATA` resource.</p>
+        <ul>
+            <li><strong>No Heavy Frameworks:</strong> Built using C++20 and standard Win32 API without .NET or MFC.</li>
+            <li><strong>Intelligent Dependencies:</strong> Natively checks for Python, `winget`, `cloudflared`, and `gh` CLI. It bypasses installations if it detects existing environments.</li>
+            <li><strong>Native UI:</strong> Features a beautifully crafted, dark-mode GDI+ loading screen to mask dependency setups.</li>
+            <li><strong>Supervisor Watchdog:</strong> Uses Windows Job Objects (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) to absolutely guarantee no orphan processes remain when the app closes.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>💻 Build Instructions</h3>
+        <p>Compilation requires zero configuration files. Just run the native C++ build script from the <strong>x64 Native Tools Command Prompt for VS 2022</strong>:</p>
+        <pre><code>cd Localcel
+cl /EHsc build.cpp
+build.exe</code></pre>
+        <p>The output will be a standalone <code>Localcel.exe</code> executable ready for deployment.</p>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+# Visual Studio / MSVC
+*.obj
+*.exe
+*.res
+*.log
+*.pdb
+*.ilk
+
+# Python
+__pycache__/
+*.pyc
+
+# Localcel Config
+.localcel/
+apps/
+logs/
+pids/
