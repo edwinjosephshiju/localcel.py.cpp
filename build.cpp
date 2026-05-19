@@ -37,12 +37,13 @@ int main() {
 
     // 2. Compile Main Application
     std::string clCmd = "cl.exe /nologo /EHsc /std:c++20 /W3 /O2 ";
+    clCmd += "/I src\\bootstrapper\\common ";
     clCmd += "/D \"NDEBUG\" /D \"_WINDOWS\" /D \"UNICODE\" /D \"_UNICODE\" ";
     
     std::vector<std::string> srcs = {
         "src\\bootstrapper\\windows\\main.cpp", "src\\bootstrapper\\windows\\installer_ui.cpp", "src\\bootstrapper\\windows\\dependency_manager.cpp", 
         "src\\bootstrapper\\windows\\extractor.cpp", "src\\bootstrapper\\windows\\hash_util.cpp", "src\\bootstrapper\\windows\\process_util.cpp", 
-        "src\\bootstrapper\\windows\\supervisor.cpp", "src\\bootstrapper\\windows\\logger.cpp"
+        "src\\bootstrapper\\windows\\supervisor.cpp", "src\\bootstrapper\\common\\logger.cpp"
     };
 
     for (const auto& src : srcs) {
@@ -68,7 +69,7 @@ int main() {
 
     // 3. Clean up intermediate files
     std::cout << "[BUILD] Cleaning up intermediate files (*.obj, resources.res)...\n";
-    std::system("del src\\bootstrapper\\windows\\*.obj src\\bootstrapper\\windows\\resources.res *.obj >nul 2>&1");
+    std::system("del src\\bootstrapper\\windows\\*.obj src\\bootstrapper\\common\\*.obj src\\bootstrapper\\windows\\resources.res *.obj >nul 2>&1");
 
     std::cout << "\n==============================================\n";
     std::cout << " BUILD SUCCESSFUL: dist\\Localcel.exe generated.\n";
@@ -81,7 +82,7 @@ int main() {
     std::cout << "[BUILD] OS detected: Linux\n";
     std::cout << "[BUILD] Compiling Linux placeholder...\n";
     
-    std::string clCmd = "g++ -std=c++20 -O2 src/bootstrapper/linux/main.cpp -o dist/Localcel";
+    std::string clCmd = "g++ -std=c++20 -O2 -I src/bootstrapper/common src/bootstrapper/linux/main.cpp src/bootstrapper/common/logger.cpp -o dist/Localcel";
     if (run_command(clCmd) != 0) {
         std::cerr << "Failed to compile C++ source files for Linux.\n";
         return 1;
