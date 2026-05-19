@@ -1,10 +1,10 @@
 #include "resource.h"
 
-IDI_APP_ICON ICON "..\\..\\assets\\localcel_logo.ico"
+IDI_APP_ICON ICON "..\\..\\..\\assets\\localcel_logo.ico"
 
-IDR_PY_MAIN RCDATA "..\\localcel.py"
+IDR_PY_MAIN RCDATA "..\\..\\localcel.py"
 IDR_MANIFEST_JSON RCDATA "manifest.json"
-IDR_LOGO_PNG RCDATA "..\\..\\assets\\localcel_full.png"
-IDR_LOGO_ICO RCDATA "..\\..\\assets\\localcel_logo.ico"
+IDR_LOGO_PNG RCDATA "..\\..\\..\\assets\\localcel_full.png"
+IDR_LOGO_ICO RCDATA "..\\..\\..\\assets\\localcel_logo.ico"
 
 1 24 "app.manifest"
