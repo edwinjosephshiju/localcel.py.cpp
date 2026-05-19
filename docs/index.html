@@ -120,8 +120,8 @@
         
         <h4>For Windows:</h4>
         <p>Run the native C++ build script from the <strong>x64 Native Tools Command Prompt for VS 2022</strong>:</p>
-        <pre><code>mkdir dist
-cl /EHsc build.cpp /Fe:dist\build.exe
+        <pre><code>if not exist dist mkdir dist
+cl /EHsc /std:c++20 build.cpp /Fe:dist\build.exe
 dist\build.exe</code></pre>
 
         <h4>For Linux:</h4>

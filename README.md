@@ -16,8 +16,8 @@
 **For Windows:**
 Run the `build.cpp` natively from the "x64 Native Tools Command Prompt for VS 2022":
 ```cmd
-mkdir dist
-cl /EHsc build.cpp /Fe:dist\build.exe
+if not exist dist mkdir dist
+cl /EHsc /std:c++20 build.cpp /Fe:dist\build.exe
 dist\build.exe
 ```
 This will compile the `Localcel.exe` using standard Microsoft MSVC tools (`cl.exe`, `rc.exe`) into the `dist` directory.
