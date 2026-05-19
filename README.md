@@ -1,6 +1,6 @@
-# Localcel.py.cpp
+# <img src="assets/localcel_full.png" alt="Localcel Logo" width="250">
 
-A robust, production-grade native Win32 C++ Bootstrapper and Supervisor for the Localcel Python GUI.
+**A robust, production-grade native Win32 C++ Bootstrapper and Supervisor for the Localcel Python GUI.**
 
 ## Architecture
 
