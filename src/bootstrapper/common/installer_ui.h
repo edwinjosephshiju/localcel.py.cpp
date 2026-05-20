@@ -1,11 +1,18 @@
 #pragma once
-#include <windows.h>
 #include <string>
+
+#if defined(_WIN32)
+#include <windows.h>
 #include <gdiplus.h>
+#endif
 
 class InstallerUI {
 public:
+#if defined(_WIN32)
     InstallerUI(HINSTANCE hInstance);
+#else
+    InstallerUI();
+#endif
     ~InstallerUI();
 
     bool Create();
@@ -15,6 +22,7 @@ public:
     void Close();
     void ShowError(const std::wstring& errorMsg);
 
+#if defined(_WIN32)
     HWND GetHWND() const { return hwnd; }
 
 private:
@@ -26,4 +34,5 @@ private:
     HWND hwndStatusText;
     ULONG_PTR gdiplusToken;
     Gdiplus::Image* logoImage;
+#endif
 };

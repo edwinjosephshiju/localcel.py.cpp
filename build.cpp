@@ -124,7 +124,13 @@ int main() {
 
     std::cout << "[BUILD] Compiling Linux build...\n";
     
-    std::string clCmd = "g++ -std=c++20 -O2 -I src/bootstrapper/common src/bootstrapper/linux/main.cpp src/bootstrapper/common/logger.cpp -o dist/Localcel";
+    std::string clCmd = "g++ -std=c++20 -O2 -I src/bootstrapper/common ";
+    clCmd += "src/bootstrapper/linux/main.cpp src/bootstrapper/common/logger.cpp ";
+    clCmd += "src/bootstrapper/linux/installer_ui.cpp src/bootstrapper/linux/dependency_manager.cpp ";
+    clCmd += "src/bootstrapper/linux/extractor.cpp src/bootstrapper/linux/hash_util.cpp ";
+    clCmd += "src/bootstrapper/linux/process_util.cpp src/bootstrapper/linux/supervisor.cpp ";
+    clCmd += "-o dist/Localcel";
+    
     if (run_command(clCmd) != 0) {
         std::cerr << "Failed to compile C++ source files for Linux.\n";
         return 1;
