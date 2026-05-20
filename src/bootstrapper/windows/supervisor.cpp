@@ -1,3 +1,4 @@
+#include <windows.h>
 #include "supervisor.h"
 #include "logger.h"
 
