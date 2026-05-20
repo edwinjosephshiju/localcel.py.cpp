@@ -7,8 +7,9 @@
 
 namespace {
     std::string W2S(const std::wstring& wstr) {
-        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-        return converter.to_bytes(wstr);
+        std::string str;
+        for (wchar_t c : wstr) str.push_back(static_cast<char>(c));
+        return str;
     }
 }
 

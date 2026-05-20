@@ -60,10 +60,27 @@ bool DependencyManager::EnsureGitHubCLI() { return true; }
 bool DependencyManager::EnsurePythonPackages(bool updateMode) {
     onProgress(L"Checking Python Packages...", 95);
     
-    ProcessUtil::RunHidden(pythonCommand + L" -m venv venv", true);
-    std::wstring pipCommand = L"./venv/bin/pip";
-    std::wstring pyCommand = L"./venv/bin/python";
-    pythonCommand = pyCommand; 
+    std::wstring venvPath = L"venv";
+    const char* homeDir = getenv("HOME");
+    if (homeDir) {
+        std::string h(homeDir);
+        venvPath = std::wstring(h.begin(), h.end()) + L"/.local/share/Localcel/venv";
+    }
+    
+    auto venvRes = ProcessUtil::RunHidden(pythonCommand + L" -m venv " + venvPath, true);
+    if (venvRes.exitCode != 0) {
+        onProgress(L"Installing python3-venv via apt...", 96);
+        ProcessUtil::RunHidden(L"sudo apt-get update && sudo apt-get install -y python3-venv", true);
+        venvRes = ProcessUtil::RunHidden(pythonCommand + L" -m venv " + venvPath, true);
+        if (venvRes.exitCode != 0) {
+            Logger::GetInstance().LogError(L"Failed to create virtual environment. Ensure python3-venv is installed.");
+            return false;
+        }
+    }
+
+    std::wstring pipCommand = venvPath + L"/bin/pip";
+    std::wstring pyCommand = venvPath + L"/bin/python";
+    pythonCommand = pyCommand;
     
     if (!updateMode) {
         auto chk = ProcessUtil::RunHidden(pyCommand + L" -c \"import PyQt6, psutil, packaging\"", true);

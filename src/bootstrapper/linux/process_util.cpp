@@ -9,9 +9,16 @@
 
 namespace {
     std::string WStringToString(const std::wstring& wstr) {
-        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-        return converter.to_bytes(wstr);
+        std::string str;
+        for (wchar_t c : wstr) {
+            str.push_back(static_cast<char>(c));
+        }
+        return str;
     }
+    
+    struct PcloseDeleter {
+        void operator()(FILE* f) const { if (f) pclose(f); }
+    };
 }
 
 ProcessResult ProcessUtil::RunHidden(const std::wstring& commandLine, bool captureOutput) {
@@ -21,7 +28,7 @@ ProcessResult ProcessUtil::RunHidden(const std::wstring& commandLine, bool captu
     if (captureOutput) {
         cmd += " 2>&1";
         std::array<char, 128> buffer;
-        std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+        std::unique_ptr<FILE, PcloseDeleter> pipe(popen(cmd.c_str(), "r"));
         if (!pipe) {
             return result;
         }
