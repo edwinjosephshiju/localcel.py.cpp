@@ -2,6 +2,7 @@
 #include <string>
 #include <filesystem>
 #include <cstdlib>
+#include <signal.h>
 #include "../common/installer_ui.h"
 #include "../common/logger.h"
 #include "../common/dependency_manager.h"
@@ -17,6 +18,8 @@ std::wstring GetLocalAppDataPath() {
 }
 
 int main() {
+    signal(SIGPIPE, SIG_IGN);
+    
     std::wstring localAppData = GetLocalAppDataPath();
     if (localAppData.empty()) {
         std::cerr << "Failed to get HOME path." << std::endl;

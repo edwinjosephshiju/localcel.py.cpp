@@ -62,6 +62,6 @@ void InstallerUI::Close() {
 void InstallerUI::ShowError(const std::wstring& errorMsg) {
     std::string error = W2S_UI(errorMsg);
     std::string cmd = "zenity --error --title=\"Localcel Error\" --text=\"" + error + "\" 2>/dev/null";
-    std::system(cmd.c_str());
+    if (std::system(cmd.c_str())) {}
     std::wcerr << L"[ERROR] " << errorMsg << std::endl;
 }
