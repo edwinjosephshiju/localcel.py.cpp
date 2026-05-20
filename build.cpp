@@ -3,6 +3,8 @@
 #include <vector>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
 
 int run_command(const std::string& cmd) {
     std::cout << "[BUILD] " << cmd << "\n";
@@ -11,6 +13,25 @@ int run_command(const std::string& cmd) {
         std::cerr << "[ERROR] Command failed with exit code " << ret << "\n";
     }
     return ret;
+}
+
+bool generate_resource_header(const std::string& inputFile, const std::string& arrayName, std::ofstream& out) {
+    std::ifstream in(inputFile, std::ios::binary);
+    if (!in) {
+        std::cerr << "[ERROR] Could not open " << inputFile << " for embedding.\n";
+        return false;
+    }
+    
+    out << "const unsigned char " << arrayName << "[] = {\n";
+    unsigned char c;
+    int count = 0;
+    while (in.read(reinterpret_cast<char*>(&c), 1)) {
+        out << "0x" << std::hex << std::setw(2) << std::setfill('0') << (int)c << ", ";
+        if (++count % 16 == 0) out << "\n";
+    }
+    out << "\n};\n";
+    out << "const unsigned int " << arrayName << "_len = " << std::dec << count << ";\n\n";
+    return true;
 }
 
 int main() {
@@ -80,7 +101,28 @@ int main() {
 
 #elif defined(__linux__)
     std::cout << "[BUILD] OS detected: Linux\n";
-    std::cout << "[BUILD] Compiling Linux placeholder...\n";
+    
+    std::cout << "[BUILD] Generating embedded resources for Linux...\n";
+    {
+        std::ofstream resOut("src/bootstrapper/linux/generated_resources.h");
+        if (!resOut) {
+            std::cerr << "[ERROR] Failed to create generated_resources.h\n";
+            return 1;
+        }
+        resOut << "#pragma once\n\n";
+        
+        bool ok = true;
+        ok &= generate_resource_header("src/localcel.py", "localcel_py", resOut);
+        ok &= generate_resource_header("assets/localcel_full.png", "localcel_full_png", resOut);
+        ok &= generate_resource_header("assets/localcel_logo.ico", "localcel_logo_ico", resOut);
+        
+        if (!ok) {
+            std::cerr << "[ERROR] Resource generation failed.\n";
+            return 1;
+        }
+    }
+
+    std::cout << "[BUILD] Compiling Linux build...\n";
     
     std::string clCmd = "g++ -std=c++20 -O2 -I src/bootstrapper/common src/bootstrapper/linux/main.cpp src/bootstrapper/common/logger.cpp -o dist/Localcel";
     if (run_command(clCmd) != 0) {
