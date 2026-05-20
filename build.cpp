@@ -102,6 +102,13 @@ int main() {
 #elif defined(__linux__)
     std::cout << "[BUILD] OS detected: Linux\n";
     
+    if (!fs::exists("src/bootstrapper/common/stb_image.h")) {
+        std::cout << "[BUILD] Downloading stb_image.h...\n";
+        if (std::system("curl -s -o src/bootstrapper/common/stb_image.h https://raw.githubusercontent.com/nothings/stb/master/stb_image.h") != 0) {
+            std::system("wget -q -O src/bootstrapper/common/stb_image.h https://raw.githubusercontent.com/nothings/stb/master/stb_image.h");
+        }
+    }
+    
     std::cout << "[BUILD] Generating embedded resources for Linux...\n";
     {
         std::ofstream resOut("src/bootstrapper/linux/generated_resources.h");
@@ -129,7 +136,7 @@ int main() {
     clCmd += "src/bootstrapper/linux/installer_ui.cpp src/bootstrapper/linux/dependency_manager.cpp ";
     clCmd += "src/bootstrapper/linux/extractor.cpp src/bootstrapper/linux/hash_util.cpp ";
     clCmd += "src/bootstrapper/linux/process_util.cpp src/bootstrapper/linux/supervisor.cpp ";
-    clCmd += "-o dist/Localcel";
+    clCmd += "-o dist/Localcel -lX11";
     
     if (run_command(clCmd) != 0) {
         std::cerr << "Failed to compile C++ source files for Linux.\n";
