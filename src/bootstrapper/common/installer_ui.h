@@ -34,5 +34,8 @@ private:
     HWND hwndStatusText;
     ULONG_PTR gdiplusToken;
     Gdiplus::Image* logoImage;
+#else
+private:
+    void* nativeHandle;
 #endif
 };
