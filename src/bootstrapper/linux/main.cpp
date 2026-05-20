@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <cstdlib>
 #include <signal.h>
+#include <thread>
 #include "../common/installer_ui.h"
 #include "../common/logger.h"
 #include "../common/dependency_manager.h"
@@ -65,10 +66,13 @@ int main() {
         Extractor::ExtractResource(localcel_logo_ico, localcel_logo_ico_len, icoPath, true);
 
         ui.UpdateProgress(L"Setup complete. Launching...", 100);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        ui.Close();
 
         int exitCode = Supervisor::RunAndWatch(pyPath, depManager.GetPythonCommand());
         if (exitCode == 42) {
             updateMode = true;
+            ui.Show();
             ui.UpdateProgress(L"Preparing to update...", 0);
             continue;
         } else {
