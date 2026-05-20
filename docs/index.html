@@ -3,74 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Localcel.py.cpp - A high-performance native Win32 C++ Bootstrapper and Supervisor for the Localcel Python GUI.">
-    <title>Localcel.py.cpp | Native C++ Bootstrapper</title>
+    <meta name="description" content="Localcel.py.cpp - A high-performance native cross-platform C++ Bootstrapper and Supervisor for the Localcel Python GUI.">
+    <title>Localcel.py.cpp | Cross-Platform Native C++ Bootstrapper</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --text-color: #e0e0e0;
+            --bg-color: #0f0f11;
+            --text-color: #e2e8f0;
             --accent-color: #0078D7;
-            --card-bg: #1e1e1e;
+            --accent-hover: #005a9e;
+            --card-bg: #18181c;
+            --border-color: #2e2e38;
+            --warning-bg: #2d1810;
+            --warning-border: #d97706;
         }
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             line-height: 1.6;
             margin: 0;
             padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
         }
         header {
             text-align: center;
-            padding: 4rem 2rem;
-            background: linear-gradient(180deg, #1a1a1a 0%, var(--bg-color) 100%);
-            width: 100%;
+            padding: 5rem 2rem 3rem 2rem;
+            background: radial-gradient(circle at top, #1e293b 0%, var(--bg-color) 70%);
+            border-bottom: 1px solid var(--border-color);
         }
         h1 {
-            font-size: 3rem;
+            font-size: 2.8rem;
             margin-bottom: 0.5rem;
             color: #ffffff;
+            font-weight: 700;
         }
         h2 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 400;
-            color: #a0a0a0;
+            color: #94a3b8;
             margin-bottom: 2rem;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
+            margin: 0 auto;
             padding: 2rem;
-            width: 100%;
-            box-sizing: border-box;
+        }
+        .warning-banner {
+            background-color: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            color: #fbd38d;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .warning-banner h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ff9800;
+        }
+        .warning-banner p {
+            margin: 0;
+            font-size: 0.95rem;
         }
         .card {
             background-color: var(--card-bg);
             border-radius: 8px;
             padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border: 1px solid #333;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
         }
         .card h3 {
             margin-top: 0;
+            color: #ffffff;
+            font-size: 1.4rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        @media(max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .feature-item h4 {
             color: var(--accent-color);
+            margin: 0 0 0.5rem 0;
+        }
+        .feature-item p {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #94a3b8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #1e293b;
+            color: #ffffff;
+            font-weight: 600;
         }
         code {
-            background-color: #2d2d2d;
+            background-color: #24242e;
             padding: 0.2rem 0.4rem;
             border-radius: 4px;
-            font-family: 'Consolas', monospace;
+            font-family: 'Consolas', 'Courier New', monospace;
             font-size: 0.9em;
+            color: #f1f5f9;
         }
         pre {
-            background-color: #2d2d2d;
-            padding: 1rem;
-            border-radius: 8px;
+            background-color: #111115;
+            padding: 1.2rem;
+            border-radius: 6px;
             overflow-x: auto;
-            border: 1px solid #444;
+            border: 1px solid var(--border-color);
+        }
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #38bdf8;
         }
         a {
             color: var(--accent-color);
@@ -82,53 +150,143 @@
         .btn {
             display: inline-block;
             background-color: var(--accent-color);
-            color: white;
-            padding: 0.8rem 1.5rem;
+            color: #ffffff;
+            padding: 0.8rem 1.8rem;
             border-radius: 4px;
             font-weight: 600;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 120, 215, 0.2);
         }
         .btn:hover {
-            background-color: #005a9e;
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
             text-decoration: none;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-stable {
+            background-color: #065f46;
+            color: #34d399;
+        }
+        .badge-alpha {
+            background-color: #78350f;
+            color: #fbbf24;
         }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="../assets/localcel_full.png" alt="Localcel Logo" style="max-width: 300px; margin-bottom: 1rem;">
-    <h2>Native C++ Bootstrapper & Supervisor</h2>
+    <img src="../assets/localcel_full.png" alt="Localcel Logo" style="max-width: 280px; margin-bottom: 1rem;">
+    <h2>High-Performance Native C++ Bootstrapper & Supervisor</h2>
     <a href="https://github.com/edwinjosephshiju/localcel.py.cpp" class="btn">View on GitHub</a>
 </header>
 
 <div class="container">
-    <div class="card">
-        <h3>🚀 Architecture Overview</h3>
-        <p>Localcel.py.cpp replaces bloated frameworks with a lightning-fast, native Win32 C++ bootstrapper. The entire Python PyQt6 GUI application is securely embedded inside the `.exe` as an `RCDATA` resource.</p>
-        <ul>
-            <li><strong>No Heavy Frameworks:</strong> Built using C++20 and standard Win32 API without .NET or MFC.</li>
-            <li><strong>Intelligent Dependencies:</strong> Natively checks for Python, `winget`, `cloudflared`, and `gh` CLI. It bypasses installations if it detects existing environments.</li>
-            <li><strong>Native UI:</strong> Features a beautifully crafted, dark-mode GDI+ loading screen to mask dependency setups.</li>
-            <li><strong>Supervisor Watchdog:</strong> Uses Windows Job Objects (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) to absolutely guarantee no orphan processes remain when the app closes.</li>
-        </ul>
+    
+    <div class="warning-banner">
+        <h4>⚠️ Warning: Linux Alpha Status</h4>
+        <p>The Linux implementation of this bootstrapper is currently in an early <strong>Alpha state</strong> and should not be considered stable for production use. It is primarily developed and tested on Ubuntu/Debian desktop environments.</p>
     </div>
 
     <div class="card">
-        <h3>💻 Build Instructions</h3>
-        <p>Compilation requires zero configuration files.</p>
+        <h3>🚀 Project Architecture</h3>
+        <p>Localcel.py.cpp eliminates runtime packaging overhead by providing an ultra-lightweight, compile-to-binary loader. It bundles resource files, handles administrative elevation cleanly, installs required packages, and supervises active applications.</p>
+        
+        <div class="features-grid">
+            <div class="feature-item">
+                <h4>Compact Footprint</h4>
+                <p>The entire helper program compiles down to ~700KB (Windows) / ~750KB (Linux), bypassing heavy runtimes like Node.js, .NET, or Electron.</p>
+            </div>
+            <div class="feature-item">
+                <h4>Single Elevation Request</h4>
+                <p>Dependencies requiring administrative context are batched together. System elevations use Windows UAC or a single Linux Polkit (<code>pkexec</code>) GUI prompt.</p>
+            </div>
+            <div class="feature-item">
+                <h4>Double-Click GUI Support</h4>
+                <p>The bootstrapper automatically renders a beautiful borderless setup screen mimicking a native installation. If run from a displayless server, it falls back to a terminal interface.</p>
+            </div>
+            <div class="feature-item">
+                <h4>Watchdog Supervision</h4>
+                <p>Maintains parent-child connection boundaries. It captures self-update commands (exit code 42), restarts, and automatically terminates orphans on shutdown.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📊 Feature Matrix</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Windows Build <span class="badge badge-stable">Stable</span></th>
+                    <th>Linux Build <span class="badge badge-alpha">Alpha</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>UI Library</strong></td>
+                    <td>Native GDI+ Win32 controls</td>
+                    <td>GTK 3 (Wayland & X11 native backends)</td>
+                </tr>
+                <tr>
+                    <td><strong>Layout Positioning</strong></td>
+                    <td>Absolute coordinates (500x200)</td>
+                    <td>Absolute layout using <code>GtkFixed</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Elevation Mechanism</strong></td>
+                    <td>Windows UAC manifest</td>
+                    <td>Polkit GUI dialog (<code>pkexec</code>) with sudo fallback</td>
+                </tr>
+                <tr>
+                    <td><strong>Embedded Assets</strong></td>
+                    <td>Win32 <code>RCDATA</code> resource wrapper</td>
+                    <td>C++ byte arrays inside generated headers</td>
+                </tr>
+                <tr>
+                    <td><strong>Supervision</strong></td>
+                    <td>Windows Job Objects (Job Close bounds)</td>
+                    <td>POSIX forks & Signal interception (SIGPIPE, SIGINT)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>💻 Compile & Installation Instructions</h3>
         
         <h4>For Windows:</h4>
-        <p>Run the native C++ build script from the <strong>x64 Native Tools Command Prompt for VS 2022</strong>:</p>
+        <p>Build directly inside the <strong>x64 Native Tools Command Prompt for VS 2022</strong>:</p>
         <pre><code>if not exist dist mkdir dist
 cl /EHsc /std:c++20 build.cpp /Fe:dist\build.exe
 dist\build.exe</code></pre>
 
-        <h4>For Linux:</h4>
-        <pre><code>mkdir -p dist
-g++ -std=c++20 build.cpp -o dist/build
-./dist/build</code></pre>
-        <p>The output will be a standalone executable ready for deployment in the <code>dist</code> directory.</p>
+        <h4>For Linux (Alpha):</h4>
+        <p>1. Install development header prerequisites (GTK 3 and X11):</p>
+        <pre><code>sudo apt update && sudo apt install -y libgtk-3-dev libx11-dev</code></pre>
+        <p>2. Execute the C++ build script:</p>
+        <pre><code>g++ -std=c++20 build.cpp -o dist/build
+./dist/build
+./dist/Localcel</code></pre>
+    </div>
+
+    <div class="card">
+        <h3>🌐 GitHub Pages Hosting</h3>
+        <p>To serve this site as the official repository landing page:</p>
+        <ol>
+            <li>Commit and push the latest <code>docs/index.html</code> contents to your main repository.</li>
+            <li>Go to the repository settings on GitHub.</li>
+            <li>Under the <strong>Pages</strong> tab, select <strong>"Deploy from a branch"</strong>.</li>
+            <li>Choose your branch (e.g. <code>master</code> or <code>main</code>) and specify the directory folder as <code>/docs</code>.</li>
+            <li>Click Save, and the page will be served shortly!</li>
+        </ol>
     </div>
 </div>
 
