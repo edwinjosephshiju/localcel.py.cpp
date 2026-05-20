@@ -21,5 +21,8 @@ private:
     bool EnsureCloudflared();
     bool EnsureGit();
     bool EnsureGitHubCLI();
+#if defined(__linux__)
+    bool EnsureSystemDependencies();
+#endif
     bool EnsurePythonPackages(bool updateMode);
 };

@@ -1,10 +1,12 @@
 #include "../common/dependency_manager.h"
 #include "../common/process_util.h"
 #include "../common/logger.h"
+#include <cstdlib>
 
 DependencyManager::DependencyManager(ProgressCallback cb) : onProgress(cb) {}
 
 bool DependencyManager::InstallDependencies(bool updateMode) {
+    if (!EnsureSystemDependencies()) return false;
     if (!EnsurePythonRuntime()) return false;
     if (!EnsureGit()) return false;
     if (!EnsureCloudflared()) return false;
@@ -17,42 +19,78 @@ bool DependencyManager::InstallDependencies(bool updateMode) {
 bool DependencyManager::EnsureWinget() { return true; }
 bool DependencyManager::EnsurePythonManager() { return true; }
 
+bool DependencyManager::EnsureSystemDependencies() {
+    bool needPython = !ProcessUtil::IsCommandAvailable(L"python3");
+    bool needGit = !ProcessUtil::IsCommandAvailable(L"git");
+    
+    bool needVenv = false;
+    if (!needPython) {
+        auto checkVenv = ProcessUtil::RunHidden(L"python3 -m venv --help", true);
+        if (checkVenv.exitCode != 0) {
+            needVenv = true;
+        }
+    } else {
+        needVenv = true;
+    }
+
+    std::wstring packages = L"";
+    if (needPython) packages += L" python3 python3-pip";
+    if (needVenv) packages += L" python3-venv";
+    if (needGit) packages += L" git";
+
+    if (!packages.empty()) {
+        onProgress(L"Requesting administrator privileges to install dependencies...", 10);
+        
+        std::wstring aptCmd = L"apt-get update && apt-get install -y" + packages;
+        
+        std::wstring runner = L"sudo";
+        if (ProcessUtil::IsCommandAvailable(L"pkexec")) {
+            runner = L"pkexec";
+        }
+        
+        std::wstring pkexecCmd = runner + L" sh -c \"" + aptCmd + L"\"";
+        
+        Logger::GetInstance().Log(L"Running elevation: " + pkexecCmd);
+        auto res = ProcessUtil::RunHidden(pkexecCmd, true);
+        if (res.exitCode != 0) {
+            Logger::GetInstance().LogError(L"Elevation failed or user canceled.");
+            return false;
+        }
+    }
+    return true;
+}
+
 bool DependencyManager::EnsurePythonRuntime() {
     onProgress(L"Checking Python Runtime...", 30);
     
     auto pyNormal = ProcessUtil::RunHidden(L"python3 --version", true);
     if (pyNormal.exitCode == 0) {
-        Logger::GetInstance().Log(L"Python 3 detected.");
+        Logger::GetInstance().Log(L"Python 3 verified.");
         pythonCommand = L"python3";
         return true;
     }
-
-    onProgress(L"Installing Python 3 via apt...", 40);
-    auto instRes = ProcessUtil::RunHidden(L"sudo apt-get update && sudo apt-get install -y python3 python3-pip python3-venv");
-    if (instRes.exitCode != 0) {
-        Logger::GetInstance().LogError(L"Failed to install Python 3. Please install manually.");
-        return false;
-    }
-    pythonCommand = L"python3";
-    return true;
+    
+    Logger::GetInstance().LogError(L"Python 3 runtime missing.");
+    return false;
 }
 
 bool DependencyManager::EnsureCloudflared() {
     onProgress(L"Checking cloudflared...", 60);
     if (!ProcessUtil::IsCommandAvailable(L"cloudflared")) {
         Logger::GetInstance().LogError(L"cloudflared not found. Please install manually on Linux for now.");
-        // Not failing the build since it might not be strictly needed just to start GUI
     }
     return true;
 }
 
 bool DependencyManager::EnsureGit() {
     onProgress(L"Checking Git...", 75);
-    if (!ProcessUtil::IsCommandAvailable(L"git")) {
-        onProgress(L"Installing Git via apt...", 80);
-        ProcessUtil::RunHidden(L"sudo apt-get install -y git");
+    if (ProcessUtil::IsCommandAvailable(L"git")) {
+        Logger::GetInstance().Log(L"Git verified.");
+        return true;
     }
-    return true;
+    
+    Logger::GetInstance().LogError(L"Git missing.");
+    return false;
 }
 
 bool DependencyManager::EnsureGitHubCLI() { return true; }
@@ -69,13 +107,8 @@ bool DependencyManager::EnsurePythonPackages(bool updateMode) {
     
     auto venvRes = ProcessUtil::RunHidden(pythonCommand + L" -m venv " + venvPath, true);
     if (venvRes.exitCode != 0) {
-        onProgress(L"Installing python3-venv via apt...", 96);
-        ProcessUtil::RunHidden(L"sudo apt-get update && sudo apt-get install -y python3-venv", true);
-        venvRes = ProcessUtil::RunHidden(pythonCommand + L" -m venv " + venvPath, true);
-        if (venvRes.exitCode != 0) {
-            Logger::GetInstance().LogError(L"Failed to create virtual environment. Ensure python3-venv is installed.");
-            return false;
-        }
+        Logger::GetInstance().LogError(L"Failed to create virtual environment.");
+        return false;
     }
 
     std::wstring pipCommand = venvPath + L"/bin/pip";
