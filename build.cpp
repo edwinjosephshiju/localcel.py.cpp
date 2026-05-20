@@ -136,7 +136,7 @@ int main() {
     clCmd += "src/bootstrapper/linux/installer_ui.cpp src/bootstrapper/linux/dependency_manager.cpp ";
     clCmd += "src/bootstrapper/linux/extractor.cpp src/bootstrapper/linux/hash_util.cpp ";
     clCmd += "src/bootstrapper/linux/process_util.cpp src/bootstrapper/linux/supervisor.cpp ";
-    clCmd += "-o dist/Localcel -lX11";
+    clCmd += "-o dist/Localcel $(pkg-config --cflags --libs gtk+-3.0)";
     
     if (run_command(clCmd) != 0) {
         std::cerr << "Failed to compile C++ source files for Linux.\n";

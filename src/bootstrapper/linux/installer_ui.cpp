@@ -1,17 +1,11 @@
 #include "../common/installer_ui.h"
 #include "../common/logger.h"
 #include "generated_resources.h"
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
+#include <gtk/gtk.h>
 #include <iostream>
-#include <cstdio>
-#include <cstdlib>
 #include <thread>
 #include <atomic>
-#include <chrono>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "../common/stb_image.h"
+#include <mutex>
 
 namespace {
     std::string W2S_UI(const std::wstring& wstr) {
@@ -22,154 +16,101 @@ namespace {
         return str;
     }
 
-    struct X11WindowData {
-        Display* display = nullptr;
-        Window window = 0;
-        GC gc = nullptr;
-        int screen = 0;
-        XImage* logoXImage = nullptr;
-        int logoW = 0;
-        int logoH = 0;
-        std::atomic<int> progressPercent{0};
+    struct GtkWindowData {
+        GtkWidget* window = nullptr;
+        GtkWidget* progress_bar = nullptr;
+        GtkWidget* label = nullptr;
+        GtkWidget* image = nullptr;
+        std::thread gtkThread;
         std::atomic<bool> isRunning{false};
+        std::atomic<int> progressPercent{0};
         std::string statusText{"Initializing..."};
-        std::thread eventThread;
-        XFontStruct* fontInfo = nullptr;
+        std::mutex mtx;
     };
-    
-    void X11EventLoop(X11WindowData* data, const unsigned char* pngData, unsigned int pngLen) {
-        data->display = XOpenDisplay(NULL);
-        if (!data->display) {
-            std::cerr << "[X11] Failed to open X display! Falling back to CLI mode." << std::endl;
+
+    gboolean update_ui_callback(gpointer data) {
+        GtkWindowData* wData = static_cast<GtkWindowData*>(data);
+        std::lock_guard<std::mutex> lock(wData->mtx);
+        
+        std::string text = wData->statusText + " (" + std::to_string(wData->progressPercent.load()) + "%)";
+        gtk_label_set_text(GTK_LABEL(wData->label), text.c_str());
+        
+        double frac = wData->progressPercent.load() / 100.0;
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(wData->progress_bar), frac);
+        
+        return wData->isRunning.load() ? TRUE : FALSE;
+    }
+
+    void GTKEventLoop(GtkWindowData* data, const unsigned char* pngData, unsigned int pngLen) {
+        int argc = 0;
+        char** argv = nullptr;
+        if (!gtk_init_check(&argc, &argv)) {
+            std::cerr << "[GTK] Failed to initialize GTK display! Falling back to CLI mode." << std::endl;
             data->isRunning = false;
             return;
         }
+
+        data->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        gtk_window_set_title(GTK_WINDOW(data->window), "Localcel Setup");
+        gtk_window_set_default_size(GTK_WINDOW(data->window), 500, 200);
+        gtk_window_set_position(GTK_WINDOW(data->window), GTK_WIN_POS_CENTER);
+        gtk_window_set_decorated(GTK_WINDOW(data->window), FALSE); // Borderless!
         
-        data->screen = DefaultScreen(data->display);
-        int depth = DefaultDepth(data->display, data->screen);
-        Visual* visual = DefaultVisual(data->display, data->screen);
-        
-        int screenW = DisplayWidth(data->display, data->screen);
-        int screenH = DisplayHeight(data->display, data->screen);
-        int width = 500;
-        int height = 200;
-        int x = (screenW - width) / 2;
-        int y = (screenH - height) / 2;
-        
-        XSetWindowAttributes attrs;
-        attrs.background_pixel = 0x1E1E1E;
-        attrs.override_redirect = True; // Flat borderless
-        
-        data->window = XCreateWindow(
-            data->display, RootWindow(data->display, data->screen),
-            x, y, width, height, 0,
-            depth, InputOutput, visual,
-            CWBackPixel | CWOverrideRedirect, &attrs
+        GtkCssProvider* provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_data(provider,
+            "window { background-color: #1e1e1e; border: 1px solid #3a3a3a; }\n"
+            "label { color: #f0f0f0; font-family: 'Segoe UI', sans-serif; font-size: 10pt; }\n"
+            "progressbar trough { background-color: #323232; border: none; min-height: 20px; }\n"
+            "progressbar progress { background-color: #0078d7; border: none; }\n",
+            -1, NULL);
+        gtk_style_context_add_provider_for_screen(
+            gdk_screen_get_default(),
+            GTK_STYLE_PROVIDER(provider),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
         );
-        
-        XStoreName(data->display, data->window, "Localcel Setup");
-        XSelectInput(data->display, data->window, ExposureMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask);
-        XMapWindow(data->display, data->window);
-        
-        data->gc = XCreateGC(data->display, data->window, 0, NULL);
-        
-        // Font selection
-        data->fontInfo = XLoadQueryFont(data->display, "-misc-fixed-medium-r-normal--13-120-75-75-c-70-iso8859-1");
-        if (!data->fontInfo) {
-            data->fontInfo = XLoadQueryFont(data->display, "fixed");
-        }
-        if (data->fontInfo) {
-            XSetFont(data->display, data->gc, data->fontInfo->fid);
-        }
-        
-        // Load embedded PNG logo
-        int nChannels;
-        unsigned char* decoded = stbi_load_from_memory(pngData, pngLen, &data->logoW, &data->logoH, &nChannels, 4);
-        if (decoded) {
-            unsigned char* bgra = (unsigned char*)malloc(data->logoW * data->logoH * 4);
-            for (int i = 0; i < data->logoW * data->logoH; i++) {
-                bgra[i*4 + 0] = decoded[i*4 + 2]; // B
-                bgra[i*4 + 1] = decoded[i*4 + 1]; // G
-                bgra[i*4 + 2] = decoded[i*4 + 0]; // R
-                bgra[i*4 + 3] = decoded[i*4 + 3]; // A
+        g_object_unref(provider);
+
+        GtkWidget* vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+        gtk_container_set_border_width(GTK_CONTAINER(vbox), 20);
+        gtk_container_add(GTK_CONTAINER(data->window), vbox);
+
+        // Logo Image Loader
+        GdkPixbufLoader* loader = gdk_pixbuf_loader_new_with_type("png", NULL);
+        if (loader) {
+            gdk_pixbuf_loader_write(loader, pngData, pngLen, NULL);
+            gdk_pixbuf_loader_close(loader, NULL);
+            GdkPixbuf* pixbuf = gdk_pixbuf_loader_get_pixbuf(loader);
+            if (pixbuf) {
+                data->image = gtk_image_new_from_pixbuf(pixbuf);
+                gtk_box_pack_start(GTK_BOX(vbox), data->image, FALSE, FALSE, 0);
             }
-            stbi_image_free(decoded);
-            
-            data->logoXImage = XCreateImage(
-                data->display, visual, depth, ZPixmap, 0,
-                (char*)bgra, data->logoW, data->logoH, 32, 0
-            );
         }
-        
-        bool isDragging = false;
-        int dragStartX = 0;
-        int dragStartY = 0;
-        
-        while (data->isRunning) {
-            while (XPending(data->display) > 0) {
-                XEvent ev;
-                XNextEvent(data->display, &ev);
-                if (ev.type == ButtonPress) {
-                    if (ev.xbutton.button == 1) {
-                        isDragging = true;
-                        dragStartX = ev.xbutton.x;
-                        dragStartY = ev.xbutton.y;
-                    }
-                } else if (ev.type == ButtonRelease) {
-                    if (ev.xbutton.button == 1) {
-                        isDragging = false;
-                    }
-                } else if (ev.type == MotionNotify) {
-                    if (isDragging) {
-                        int newWinX = ev.xmotion.x_root - dragStartX;
-                        int newWinY = ev.xmotion.y_root - dragStartY;
-                        XMoveWindow(data->display, data->window, newWinX, newWinY);
-                    }
-                }
+
+        GtkWidget* spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        gtk_widget_set_size_request(spacer, 1, 10);
+        gtk_box_pack_start(GTK_BOX(vbox), spacer, FALSE, FALSE, 0);
+
+        data->label = gtk_label_new("Initializing...");
+        gtk_label_set_xalign(GTK_LABEL(data->label), 0.0);
+        gtk_box_pack_start(GTK_BOX(vbox), data->label, FALSE, FALSE, 0);
+
+        data->progress_bar = gtk_progress_bar_new();
+        gtk_box_pack_start(GTK_BOX(vbox), data->progress_bar, FALSE, FALSE, 0);
+
+        // Window drag functionality
+        g_signal_connect(data->window, "button-press-event", G_CALLBACK(+[](GtkWidget* widget, GdkEventButton* event, gpointer data) -> gboolean {
+            if (event->button == 1) {
+                gtk_window_begin_move_drag(GTK_WINDOW(widget), event->button, event->x_root, event->y_root, event->time);
+                return TRUE;
             }
-            
-            // Render Background
-            XSetForeground(data->display, data->gc, 0x1E1E1E);
-            XFillRectangle(data->display, data->window, data->gc, 0, 0, width, height);
-            
-            // Draw window border (thin gray border)
-            XSetForeground(data->display, data->gc, 0x3A3A3A);
-            XDrawRectangle(data->display, data->window, data->gc, 0, 0, width - 1, height - 1);
-            
-            // Render Logo
-            if (data->logoXImage) {
-                int imgX = (width - data->logoW) / 2;
-                XPutImage(data->display, data->window, data->gc, data->logoXImage, 0, 0, imgX, 20, data->logoW, data->logoH);
-            }
-            
-            // Render Progress Bar Background (0x323232)
-            XSetForeground(data->display, data->gc, 0x323232);
-            XFillRectangle(data->display, data->window, data->gc, 20, 110, 460, 20);
-            
-            // Render Progress Bar Fill (0x0078D7)
-            XSetForeground(data->display, data->gc, 0x0078D7);
-            int percent = data->progressPercent.load();
-            int fillW = (int)(460.0f * (percent / 100.0f));
-            XFillRectangle(data->display, data->window, data->gc, 20, 110, fillW, 20);
-            
-            // Render Text (0xF0F0F0)
-            XSetForeground(data->display, data->gc, 0xF0F0F0);
-            std::string text = data->statusText + " (" + std::to_string(percent) + "%)";
-            XDrawString(data->display, data->window, data->gc, 20, 95, text.c_str(), text.length());
-            
-            XFlush(data->display);
-            std::this_thread::sleep_for(std::chrono::milliseconds(16));
-        }
-        
-        if (data->logoXImage) {
-            XDestroyImage(data->logoXImage);
-        }
-        if (data->fontInfo) {
-            XFreeFont(data->display, data->fontInfo);
-        }
-        XFreeGC(data->display, data->gc);
-        XDestroyWindow(data->display, data->window);
-        XCloseDisplay(data->display);
+            return FALSE;
+        }), NULL);
+
+        gtk_widget_show_all(data->window);
+
+        g_timeout_add(16, update_ui_callback, data);
+
+        gtk_main();
     }
 }
 
@@ -185,16 +126,17 @@ bool InstallerUI::Create() {
 }
 
 void InstallerUI::Show() {
-    X11WindowData* data = new X11WindowData();
+    GtkWindowData* data = new GtkWindowData();
     data->isRunning = true;
     nativeHandle = data;
     
-    data->eventThread = std::thread(X11EventLoop, data, localcel_full_png, localcel_full_png_len);
+    data->gtkThread = std::thread(GTKEventLoop, data, localcel_full_png, localcel_full_png_len);
 }
 
 void InstallerUI::UpdateProgress(const std::wstring& statusText, int percentage) {
     if (nativeHandle) {
-        X11WindowData* data = static_cast<X11WindowData*>(nativeHandle);
+        GtkWindowData* data = static_cast<GtkWindowData*>(nativeHandle);
+        std::lock_guard<std::mutex> lock(data->mtx);
         data->statusText = W2S_UI(statusText);
         data->progressPercent.store(percentage);
     }
@@ -206,10 +148,16 @@ void InstallerUI::RunMessageLoop() {
 
 void InstallerUI::Close() {
     if (nativeHandle) {
-        X11WindowData* data = static_cast<X11WindowData*>(nativeHandle);
+        GtkWindowData* data = static_cast<GtkWindowData*>(nativeHandle);
         data->isRunning = false;
-        if (data->eventThread.joinable()) {
-            data->eventThread.join();
+        
+        g_idle_add([](gpointer w) -> gboolean {
+            gtk_main_quit();
+            return FALSE;
+        }, nullptr);
+
+        if (data->gtkThread.joinable()) {
+            data->gtkThread.join();
         }
         delete data;
         nativeHandle = nullptr;
