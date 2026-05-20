@@ -29,7 +29,7 @@ void Logger::Initialize(const std::wstring& logDir) {
     std::lock_guard<std::mutex> lock(logMutex);
     std::filesystem::create_directories(logDir);
     logFilePath = logDir + L"/app.log";
-    logFile.open(logFilePath, std::ios::app);
+    logFile.open(std::filesystem::path(logFilePath), std::ios::app);
 }
 
 Logger::~Logger() {
